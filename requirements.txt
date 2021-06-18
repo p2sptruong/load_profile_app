@@ -1,0 +1,10 @@
+matplotlib
+pandas
+plotly
+ladybug_core
+ladybug_pandas
+numpy
+streamlit
+ladybug
+openpyxl
+
