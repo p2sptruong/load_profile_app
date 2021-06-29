@@ -16,6 +16,7 @@ import openpyxl
 # VARIABLES
 
 # do some housekeeping and create some variables
+example_data_path = './Input Load Profiles/'
 logo = './images/P2S LOGO_COLOR.png'
 sheet_name = 'Data'
 data_range = 'A:I'
@@ -383,6 +384,10 @@ Template.xlsx" file at this location and populate it with data:
 
 # display a file_uploader widget
 uploaded_file = st.file_uploader("Choose a file")
+
+# display a "see example" button
+if st.button('See example'):
+    uploaded_file = example_data_path + random.choice(os.listdir(example_data_path))
 
 # on user input, process the uploaded file and display the data in table format
 if uploaded_file is not None:
