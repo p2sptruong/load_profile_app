@@ -16,6 +16,7 @@ import openpyxl
 # VARIABLES
 
 # do some housekeeping and create some variables
+example_data_path = './Input Load Profiles/'
 logo = './images/P2S LOGO_COLOR.png'
 sheet_name = 'Data'
 data_range = 'A:I'
