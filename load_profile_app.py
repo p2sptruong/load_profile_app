@@ -391,8 +391,7 @@ if uploaded_file is not None:
     #TODO: Check sheet names and ask the user to select the sheet
     excel_file, sheet_names = process_upload(uploaded_file)
 
-    if len(sheet_names) > 1:
-        sheet_name = st.selectbox('Choose a sheet:', sheet_names)
+    sheet_name = st.selectbox('Choose a sheet:', sheet_names)
 
     load_df, meta_df = excel_to_df(excel_file, sheet_name)
 
