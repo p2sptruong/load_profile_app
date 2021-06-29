@@ -381,6 +381,10 @@ Template.xlsx" file at this location and populate it with data:
 # display a file_uploader widget
 uploaded_file = st.file_uploader("Choose a file")
 
+# display a "see example" button
+if st.button('See example'):
+    uploaded_file = example_data_path + random.choice(os.listdir(example_data_path))
+
 # on user input, process the uploaded file and display the data in table format
 if uploaded_file is not None:
     #TODO: Check sheet names and ask the user to select the sheet
