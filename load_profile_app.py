@@ -16,10 +16,12 @@ import openpyxl
 # VARIABLES
 
 # do some housekeeping and create some variables
+example_data_path = './Input Load Profiles/'
 logo = './images/P2S LOGO_COLOR.png'
 sheet_name = 'Data'
 data_range = 'A:I'
 meta_data_range = 'K:L'
+y_axis_options = ['Operating Hours', 'Instantaneous Output']
 
 ####################################################################################################################
 # FUNCTIONS
@@ -48,7 +50,9 @@ def excel_to_df(excel_file,sheet_name=0):
     meta_df.dropna(axis='index',how='all',inplace=True)
     return load_df, meta_df
 
-def plot_load_profile(load_df, meta_df):
+def plot_load_profile(load_df, meta_df, y_axis_units):
+    with st.beta_expander('Click to look at the data you uploaded'):
+        st.write(load_df)
 
     # process timestamps & characterize time series
     start = pd.to_datetime(load_df['Timestamp'].iloc[0])
@@ -107,12 +111,32 @@ def plot_load_profile(load_df, meta_df):
 
         cumulative_hours[i] = c_hours
 
-    # create a figure with a secondary y-axis
+    if y_axis_units == 'Operating Hours':
+        y1 = [x / sum(counts) * 100 for x in counts]
+        y2 = [x / total_op_hrs * 100 for x in cumulative_hours]
+        customdata = np.stack([decimal_labels, increment_labels]).transpose()
+        y1_title_text = "<b>Operating hours</b>"
+        y2_title_text = "<b>Cumulative</b><br>(100% = {:,}".format(int(sum(counts) * td_in_hrs)) + " hours)"
+        hovertemplate1 = '<b>%{y:.2f}% of total operating hours</b> <extra>@ %{customdata[0]} design capacity</extra>'
+        hovertemplate2 = '<b>%{y:.2f}% of total operating hours</b> <extra>@ ≤%{customdata[0]} design capacity</extra>'
+        color = '#3B6D89'
+    elif y_axis_units == 'Instantaneous Output':
+        y1 = [round(x/total_load*100,2) for x in binned_loads]
+        y2 = cumulative_percent
+        customdata = np.stack([decimal_labels, increment_labels]).transpose()
+        y1_title_text = "<b>Instantaneous Heating Output</b>"
+        y2_title_text = "<b>Cumulative</b><br>(100% = {:,}".format(round(total_load)) + " kBtus)"
+        hovertemplate1 = '<b>%{y:,}% of total heating output</b> <extra>@ %{customdata[0]} design capacity</extra>'
+        hovertemplate2 = '<b>%{y:.2f}% of total heating output</b> <extra>@ ≤%{customdata[0]} design capacity</extra>'
+        color = '#00C496'
+    #TODO: add y-axis option for Btu/sf
+
+    # create a figure with a secondary y1-axis
     fig = make_subplots(
-        rows = 2,
+        rows = 1,
         cols = 1,
         vertical_spacing=0.05,
-        specs=[[{"secondary_y": True}],[{"secondary_y": True}]]
+        specs=[[{"secondary_y": True}]]
     )
 
     # Set figure title
@@ -130,17 +154,14 @@ def plot_load_profile(load_df, meta_df):
         )
     )
 
-    # row 1
-    # add the hours bar chart on the primary axis
+    # add the bar chart on the primary axis
     fig.add_trace(
         go.Bar(
             x=labels,
-            y=[x/sum(counts)*100 for x in counts],
-            marker=dict(
-                color = "#3B6D89"
-            ),
-            customdata=np.stack([decimal_labels, increment_labels]).transpose(),
-            hovertemplate='<b>%{y:.2f}% of total operating hours</b> <extra>@ %{customdata[0]} design capacity</extra>'
+            y=y1,
+            marker=dict(color = color),
+            customdata=customdata,
+            hovertemplate=hovertemplate1
         ),
         secondary_y=False,
         row = 1,
@@ -151,56 +172,16 @@ def plot_load_profile(load_df, meta_df):
     fig.add_trace(
         go.Scatter(
             x=labels,
-            y=[x/total_op_hrs*100 for x in cumulative_hours],
+            y=y2,
             mode='lines+markers',
             marker = dict(
                 color = "#FB9A2D",
             ),
-            customdata=np.stack([decimal_labels, increment_labels]).transpose(),
-            hovertemplate=
-            '<b>%{y:.2f}% of total operating hours</b> <extra>@ ≤%{customdata[0]} design capacity</extra>'
+            customdata=customdata,
+            hovertemplate=hovertemplate2
         ),
         secondary_y=True,
         row=1,
-        col=1
-    )
-
-    # row 2
-    # add the load bar chart on the primary axis
-    fig.add_trace(
-        go.Bar(
-            x=labels,
-            y=[round(x/total_load*100,2) for x in binned_loads],
-            marker = dict(
-                color = "#00C496",
-            ),
-            customdata=np.stack([decimal_labels, increment_labels]).transpose(),
-            hovertemplate=
-            '<b>%{y:,}% of total heating output</b> <extra>@ %{customdata[0]} design capacity</extra>'
-        ),
-        secondary_y=False,
-        row=2,
-        col=1,
-    )
-    fig.update_yaxes(
-        ticksuffix='%'
-    )
-
-    # add the cumulative percent line on the secondary axis
-    fig.add_trace(
-        go.Scatter(
-            x=labels,
-            y=cumulative_percent,
-            mode='lines+markers',
-            marker = dict(
-                color = "#FB9A2D",
-            ),
-            customdata=np.stack([decimal_labels, increment_labels]).transpose(),
-            hovertemplate=
-            '<b>%{y:.2f}% of total heating output</b> <extra>@ ≤%{customdata[0]} design capacity</extra>'
-        ),
-        secondary_y=True,
-        row=2,
         col=1
     )
 
@@ -222,6 +203,7 @@ def plot_load_profile(load_df, meta_df):
         borderpad = 10,
         font = dict(size = 14, color='black')
     )
+
     # throw a warning if input data contains negative loads
     if len(neg_loads) > 0:
         fig.add_annotation(
@@ -241,40 +223,25 @@ def plot_load_profile(load_df, meta_df):
             borderpad=10,
             font=dict(size=14, color='red')
         )
-        # counts.insert(0, len(neg_loads))
-        # binned_loads.insert(0, load_df['Heating Load (MBH)'][(load_df['Heating Load (MBH)'] < 0)].sum())
-        # cumulative_loads.insert(0, 0)
-        # cumulative_percent.insert(0, 0)
-        # cumulative_hours.insert(0, 0)
-        # labels.insert(0,'<b>!!!</b><br>Negative Load<br>(check inputs)')
-        # decimal_labels.insert(0, 'negative')
-        # increment_labels.insert(0, 'negative')
 
     # configure plot layout
     fig.update_xaxes(type='category')
 
-    # set row 1 axis titles
-    fig.update_xaxes(
-        title_text='',
-        showticklabels=False,
-        showline=True,
-        linewidth=2,
-        linecolor='black',
-        mirror=True,
-        row=1
-    )
+    # set y1-axis title
     fig.update_yaxes(
-        title_text="<b>Operating hours</b>",
-        color = "#3B6D89",
+        title_text=y1_title_text,
+        color = color,
         showline=True,
         linewidth=2,
         linecolor='black',
         secondary_y=False,
         nticks=4,
+        ticksuffix='%',
         row=1
     )
+    # set y2-axis title
     fig.update_yaxes(
-        title_text="<b>Cumulative</b><br>(100% = {:,}".format(int(sum(counts)*td_in_hrs)) + " hours)",
+        title_text=y2_title_text,
         color = "#FB9A2D",
         showline=True,
         linewidth=2,
@@ -283,39 +250,17 @@ def plot_load_profile(load_df, meta_df):
         showgrid=False,
         range=[0,105],
         nticks=2,
+        ticksuffix='%',
         row=1
     )
 
-    # set row 2 axis titles
     fig.update_xaxes(
         title_text='<b>Part load operating point</b><br>(1.0x = design capacity, ' + str(mbh_design) + ' MBH)',
         showline=True,
         linewidth=2,
         linecolor='black',
         mirror=True,
-        row=2
-    )
-    fig.update_yaxes(
-        title_text="<b>Heating output</b>",
-        color = "#00C496",
-        showline=True,
-        linewidth=2,
-        linecolor='black',
-        secondary_y=False,
-        nticks=4,
-        row=2
-    )
-    fig.update_yaxes(
-        title_text="<b>Cumulative</b><br>(100% = {:,}".format(round(total_load)) + " kBtus)",
-        color = "#FB9A2D",
-        showline=True,
-        linewidth=2,
-        linecolor='black',
-        showgrid = False,
-        secondary_y=True,
-        range=[0, 105],
-        nticks=2,
-        row=2
+        row=1
     )
 
     # customize hover labels
@@ -381,22 +326,43 @@ Template.xlsx" file at this location and populate it with data:
 *L:\Office Folder\Decarbonization Task Force\Modeling, Sizing, and Trend Data Working Group*
 """
 
-# display a file_uploader widget
-uploaded_file = st.file_uploader("Choose a file")
+# display a select box for uploading a file vs. seeing an example
+app_mode = st.selectbox('Would you like to see an example, or upload a file?', ['Upload a file', 'See example'])
 
-# on user input, process the uploaded file and display the data in table format
-if uploaded_file is not None:
-    #TODO: Check sheet names and ask the user to select the sheet
-    excel_file, sheet_names = process_upload(uploaded_file)
+# If showing an example, get a random file from the example file folder and run the app
+if app_mode == 'See example':
+    example_file = example_data_path + random.choice(os.listdir(example_data_path))
+    excel_file, sheet_names = process_upload(example_file)
 
     if len(sheet_names) > 1:
         sheet_name = st.selectbox('Choose a sheet:', sheet_names)
 
     load_df, meta_df = excel_to_df(excel_file, sheet_name)
 
-    with st.beta_expander('Click to look at the data you uploaded'):
-        st.write(load_df)
+    # display a radio buton for selecting y1-axis units
+    y_axis_units = st.radio('Choose units for the y-axis:', y_axis_options)
 
-    fig = plot_load_profile(load_df, meta_df)
+    fig = plot_load_profile(load_df, meta_df, y_axis_units)
 
     st.plotly_chart(fig, use_container_width=True)
+
+# If taking user input, process the uploaded file and display the data in table format
+elif app_mode == 'Upload a file':
+    # display a file_uploader widget
+    uploaded_file = st.file_uploader("Choose a file")
+
+    if uploaded_file is not None:
+        excel_file, sheet_names = process_upload(uploaded_file)
+
+        if len(sheet_names) > 1:
+            sheet_name = st.selectbox('Choose a sheet:', sheet_names)
+
+        load_df, meta_df = excel_to_df(excel_file, sheet_name)
+
+        # display a radio buton for selecting y1-axis units
+        y_axis_units = st.radio('Choose units for the y-axis:', y_axis_options)
+
+        fig = plot_load_profile(load_df, meta_df, y_axis_units)
+
+        st.plotly_chart(fig, use_container_width=True)
+
