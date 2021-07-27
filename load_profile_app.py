@@ -92,6 +92,8 @@ def plot_load_profile(load_df, meta_df, y_axis_units):
     if pd.isna(mbh_design):
         mbh_design = gsf*30/1000
         mbh_flag = True
+    else:
+        mbh_flag = False
 
     # calculate 5% load increment
     mbh_increment = mbh_design/20
