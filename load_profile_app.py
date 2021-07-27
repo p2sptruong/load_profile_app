@@ -312,7 +312,7 @@ def plot_load_profile(load_df, meta_df, y_axis_units):
         margin = dict(
             l = 50,
             r = 50,
-            t = 170,
+            t = 160,
             b = 50
         )
     )
