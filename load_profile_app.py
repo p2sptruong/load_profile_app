@@ -21,11 +21,28 @@ logo = './images/P2S LOGO_COLOR.png'
 sheet_name = 'Data'
 data_range = 'A:I'
 meta_data_range = 'K:L'
+meta_data_count = 8
 y_axis_options = ['Operating Hours', 'Instantaneous Output']
+mbh_flag = False
 
 ####################################################################################################################
 # FUNCTIONS
 
+# helper function for displaying text input cleanly
+def text_field(label, columns=None, **input_params):
+    c1, c2 = st.beta_columns(columns or [1, 4])
+
+    # Display field name with some alignment
+    c1.markdown("##")
+    c1.markdown(label)
+
+    # Sets a default key parameter to avoid duplicate key errors
+    input_params.setdefault("key", label)
+
+    # Forward text input parameters
+    return c2.text_input("", **input_params) # Notice that you can forward text_input parameters naturally
+
+# open the file and get the sheet names
 def process_upload(uploaded_file, sheet_name=sheet_name, data_range=data_range, meta_data_range=meta_data_range):
     excel_file = pd.ExcelFile(uploaded_file,engine='openpyxl')
     sheet_names = excel_file.sheet_names
@@ -44,16 +61,16 @@ def excel_to_df(excel_file,sheet_name=0):
     meta_df = excel_file.parse(
         sheet_name=sheet_name,
         index_col=0,
+        header = 0,
+        nrows = meta_data_count,
         usecols=meta_data_range,
         engine='openpyxl'
     )
-    meta_df.dropna(axis='index',how='all',inplace=True)
+    # meta_df.dropna(axis='index',how='all',inplace=True)
     return load_df, meta_df
 
+# the main event
 def plot_load_profile(load_df, meta_df, y_axis_units):
-    with st.beta_expander('Click to look at the data you uploaded'):
-        st.write(load_df)
-
     # process timestamps & characterize time series
     start = pd.to_datetime(load_df['Timestamp'].iloc[0])
     start_plus_one = pd.to_datetime(load_df['Timestamp'].iloc[1])
@@ -67,12 +84,19 @@ def plot_load_profile(load_df, meta_df, y_axis_units):
     max_load = round(load_df['Heating Load (MBH)'].max(),2)
     neg_loads = load_df['Heating Load (MBH)'][load_df['Heating Load (MBH)'] < 0]
 
-    # read design MBH from spreadsheet and calculate 5% load increment
+    # read GSF from spreadsheet
+    gsf = meta_df.iloc[1,0]
+
+    # read design MBH from spreadsheet and do some stuff if it's not a real input
     mbh_design = round(meta_df.iloc[0,0],2)
+    if pd.isna(mbh_design):
+        mbh_design = gsf*30/1000
+        mbh_flag = True
+
+    # calculate 5% load increment
     mbh_increment = mbh_design/20
 
-    # read GSF from spreadsheet & calculate Btu/sf for design & actual
-    gsf = meta_df.iloc[1,0]
+    #calculate Btu/sf for design & actual
     btu_sf_design = round(1000 * mbh_design / gsf,2)
     btu_sf_actual = round(1000 * max_load / gsf,2)
 
@@ -185,10 +209,19 @@ def plot_load_profile(load_df, meta_df, y_axis_units):
         col=1
     )
 
+    # TODO: Clean this up
+    # Add asterisks on "Design MBH" & "Design Btu/sf" to indicate that these are assumptions
+    if mbh_flag:
+        annotation_text = "<b>*Design MBH</b>: {:,}<br><b>*Design Btu/sf</b>: {:,}<br><br><b>Max. actual MBH</b>: {:,} \
+                          <br><b>Max. actual *Btu/sf</b>: {:,}<br>".format(mbh_design,btu_sf_design,max_load,
+                                                                              btu_sf_actual)
+    else:
+        annotation_text = "<b>Design MBH</b>: {:,}<br><b>Design Btu/sf</b>: {:,}<br><br><b>Max. actual MBH</b>: {:,} \
+                          <br><b>Max. actual Btu/sf</b>: {:,}<br>".format(mbh_design, btu_sf_design, max_load,
+                                                                              btu_sf_actual)
     # add annotations
     fig.add_annotation(
-        text= "<b>Design MBH</b>: {:,}<br><b>Design Btu/sf</b>: {:,}<br><br><b>Max. actual MBH</b>: {:,}<br><b>Max. actual \
-    Btu/sf</b>: {:,}<br>".format(mbh_design,btu_sf_design,max_load,btu_sf_actual),
+        text= annotation_text,
         align='left',
         showarrow=False,
         bordercolor='black',
@@ -217,7 +250,7 @@ def plot_load_profile(load_df, meta_df, y_axis_units):
             yref='paper',
             xanchor='right',
             yanchor='bottom',
-            x=0.7,
+            x=0.6,
             y=1.05,
             bgcolor="white",
             borderpad=10,
@@ -339,6 +372,9 @@ if app_mode == 'See example':
 
     load_df, meta_df = excel_to_df(excel_file, sheet_name)
 
+    with st.beta_expander('Click to look at the data you uploaded'):
+        st.write(load_df)
+
     # display a radio buton for selecting y1-axis units
     y_axis_units = st.radio('Choose units for the y-axis:', y_axis_options)
 
@@ -356,8 +392,19 @@ elif app_mode == 'Upload a file':
 
         if len(sheet_names) > 1:
             sheet_name = st.selectbox('Choose a sheet:', sheet_names)
+        else:
+            sheet_name = 0
 
         load_df, meta_df = excel_to_df(excel_file, sheet_name)
+
+        with st.beta_expander('Click to look at the data you uploaded'):
+            st.write(load_df)
+
+        # # give user the option of overwriting metadata in the app TODO: let them save it back to the excel file, fix issue with str v. float
+        # with st.beta_expander('Click to overwrite static inputs/metadata (this will NOT change the uploaded file)'):
+        #     for i in range(len(meta_df)):
+        #         # text_field() is a streamlit specific helper function for generating dialog boxes
+        #         meta_df.iloc[i, 0] = text_field(meta_df.index[i], value = meta_df.iloc[i, 0])
 
         # display a radio buton for selecting y1-axis units
         y_axis_units = st.radio('Choose units for the y-axis:', y_axis_options)
