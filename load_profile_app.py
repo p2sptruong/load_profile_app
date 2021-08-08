@@ -46,9 +46,16 @@ def text_field(label, columns=None, **input_params):
 def process_upload(uploaded_file, sheet_name=sheet_name, data_range=data_range, meta_data_range=meta_data_range):
     excel_file = pd.ExcelFile(uploaded_file,engine='openpyxl')
     sheet_names = excel_file.sheet_names
+
     return excel_file, sheet_names
 
-def excel_to_df(excel_file,sheet_name=0):
+def excel_to_df(excel_file,sheet_names):
+    # let the user select a sheet
+    if len(sheet_names) > 1:
+        sheet_name = st.selectbox('Choose a sheet:', sheet_names)
+    else:
+        sheet_name = 0
+
     # read load data into dataframe and calculate the total load, drop empty rows
     load_df = excel_file.parse(
         sheet_name=sheet_name,
@@ -57,7 +64,7 @@ def excel_to_df(excel_file,sheet_name=0):
     )
     load_df.dropna(axis='index',how='all',inplace=True)
 
-    # read static inputs & metadata into dataframe, drop empty rows
+    # read static inputs & metadata into dataframe - hard coded
     meta_df = excel_file.parse(
         sheet_name=sheet_name,
         index_col=0,
@@ -344,7 +351,7 @@ st.set_page_config(layout="wide")
 st.image(logo)
 
 # display an expanding 'About' section
-with st.beta_expander('About'):
+with st.expander('About'):
     """Welcome to the party! This is an experimental app being developed by the P2S Energy Automation 
     Team/Decarbonization Task Group. If you run into any bugs/errors or have suggestions for additional 
     features/functionality, please use the "Report a bug with this app" tool in the drop down menu in the top right 
@@ -366,15 +373,15 @@ app_mode = st.selectbox('Would you like to see an example, or upload a file?', [
 
 # If showing an example, get a random file from the example file folder and run the app
 if app_mode == 'See example':
-    example_file = example_data_path + random.choice(os.listdir(example_data_path))
+    # example_file = example_data_path + random.choice(os.listdir(example_data_path))
+    example_file = '/Users/maxsun/PycharmProjects/load_profile_app/Input Load Profiles/SDSU Heat Load Analysis Multiple Bldgs.xlsx'
+    # example_file = '/Users/maxsun/PycharmProjects/load_profile_app/Input Load Profiles/test.xlsx'
+
+    # process the uploaded file and turn it into a dataframe
     excel_file, sheet_names = process_upload(example_file)
+    load_df, meta_df = excel_to_df(excel_file, sheet_names)
 
-    if len(sheet_names) > 1:
-        sheet_name = st.selectbox('Choose a sheet:', sheet_names)
-
-    load_df, meta_df = excel_to_df(excel_file, sheet_name)
-
-    with st.beta_expander('Click to look at the data you uploaded'):
+    with st.expander('Click to look at the data you uploaded'):
         st.write(load_df)
 
     # display a radio buton for selecting y1-axis units
@@ -390,20 +397,15 @@ elif app_mode == 'Upload a file':
     uploaded_file = st.file_uploader("Choose a file")
 
     if uploaded_file is not None:
+        # process the uploaded file and turn it into a dataframe
         excel_file, sheet_names = process_upload(uploaded_file)
-
-        if len(sheet_names) > 1:
-            sheet_name = st.selectbox('Choose a sheet:', sheet_names)
-        else:
-            sheet_name = 0
-
         load_df, meta_df = excel_to_df(excel_file, sheet_name)
 
-        with st.beta_expander('Click to look at the data you uploaded'):
+        with st.expander('Click to look at the data you uploaded'):
             st.write(load_df)
 
         # # give user the option of overwriting metadata in the app TODO: let them save it back to the excel file, fix issue with str v. float
-        # with st.beta_expander('Click to overwrite static inputs/metadata (this will NOT change the uploaded file)'):
+        # with st.expander('Click to overwrite static inputs/metadata (this will NOT change the uploaded file)'):
         #     for i in range(len(meta_df)):
         #         # text_field() is a streamlit specific helper function for generating dialog boxes
         #         meta_df.iloc[i, 0] = text_field(meta_df.index[i], value = meta_df.iloc[i, 0])
