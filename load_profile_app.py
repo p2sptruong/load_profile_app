@@ -203,15 +203,15 @@ def plot_load_profile(load_df, meta_df):
     # </editor-fold>
 
     # <editor-fold desc="Set x-axis variables based on x-axis units">
-    # Set x-axis variables based on x-axis units
-    #TODO: add x-axis option for Btu/sf
-    if x_axis_units == 'MBH':
-        customdata = np.stack([decimal_labels, increment_labels]).transpose()
-        y1_title_text = "<b>Operating hours</b>"
-        y2_title_text = "<b>Cumulative</b><br>(100% = {:,}".format(int(sum(counts) * td_in_hrs)) + " hours)"
-        hovertemplate1 = '<b>%{y:.2f}% of total operating hours</b> <extra>@ %{customdata[0]} design capacity</extra>'
-        hovertemplate2 = '<b>%{y:.2f}% of total operating hours</b> <extra>@ ≤%{customdata[0]} design capacity</extra>'
-        color = '#3B6D89'
+    # # Set x-axis variables based on x-axis units
+    # #TODO: add x-axis option for Btu/sf
+    # if x_axis_units == 'MBH':
+    #     customdata = np.stack([decimal_labels, increment_labels]).transpose()
+    #     y1_title_text = "<b>Operating hours</b>"
+    #     y2_title_text = "<b>Cumulative</b><br>(100% = {:,}".format(int(sum(counts) * td_in_hrs)) + " hours)"
+    #     hovertemplate1 = '<b>%{y:.2f}% of total operating hours</b> <extra>@ %{customdata[0]} design capacity</extra>'
+    #     hovertemplate2 = '<b>%{y:.2f}% of total operating hours</b> <extra>@ ≤%{customdata[0]} design capacity</extra>'
+    #     color = '#3B6D89'
     # </editor-fold>
 
     # <editor-fold desc="Create the figure">
