@@ -74,7 +74,11 @@ def process_upload(uploaded_file, data_range=data_range, meta_data_range=meta_da
     return load_df, meta_df, excel_file, sheet_names
 
 # the main event
-def plot_load_profile(load_df, meta_df, y_axis_units):
+def plot_load_profile(load_df, meta_df):
+    # let the user look at the data in table format
+    with st.expander('Click to look at the data you uploaded'):
+        st.write(load_df)
+
     # process timestamps & characterize time series
     start = pd.to_datetime(load_df['Timestamp'].iloc[0])
     start_plus_one = pd.to_datetime(load_df['Timestamp'].iloc[1])
@@ -93,11 +97,31 @@ def plot_load_profile(load_df, meta_df, y_axis_units):
 
     # read design MBH from spreadsheet and do some stuff if it's not a real input
     mbh_design = round(meta_df.iloc[0,0],2)
-    if pd.isna(mbh_design):
-        mbh_design = gsf*30/1000
-        mbh_flag = True
-    else:
-        mbh_flag = False
+
+    # Let user change graph settings
+    with st.expander('Click to change graph settings'):
+        # let user choose units for x- & y- axes
+        col1, col2 = st.columns(2)
+        col1.header('Choose units for the y-axis:')
+        col2.header('Choose units for the x-axis:')
+        y_axis_units = col1.radio('Choose units for the y-axis:', y_axis_options)
+        col2.radio('Choose units for the x-axis:', y_axis_options)
+        # y_axis_units = st.radio('Choose units for the y-axis:', y_axis_options)
+
+        # if the uploaded file is missing MBH data, let the user choose a value for BTU/sf
+        if pd.isna(mbh_design):
+            # display a slider for user to adjust x-axis limit
+            btu_sf_override = st.slider(
+                label='Missing installed capacity data. Set BTU/sf to adjust limits of graph. Default is 30 BTU/sf',
+                min_value=5,
+                max_value=100,
+                value=30,
+                step=5
+            )
+            mbh_design = gsf*btu_sf_override/1000
+            mbh_flag = True
+        else:
+            mbh_flag = False
 
     # calculate 5% load increment
     mbh_increment = mbh_design/20
@@ -337,6 +361,9 @@ def plot_load_profile(load_df, meta_df, y_axis_units):
         height=750
     )
 
+    # print plot to streamlit app
+    st.plotly_chart(fig, use_container_width=True)
+
     return fig
 
 ####################################################################################################################
@@ -368,8 +395,9 @@ Template.xlsx" file at this location and populate it with data:
 # display a select box for uploading a file vs. seeing an example
 app_mode = st.selectbox('Would you like to see an example, or upload a file?', ['Upload a file', 'See example'])
 
-# If showing an example, get a random file from the example file folder and run the app
+# APP MODE: EXAMPLE
 if app_mode == 'See example':
+    # set example file here, or choose a random example file from the folder
     example_file = example_data_path + random.choice(os.listdir(example_data_path))
     # example_file = '/Users/maxsun/PycharmProjects/load_profile_app/Input Load Profiles/SDSU Heat Load Analysis Multiple Bldgs.xlsx'
     # example_file = '/Users/maxsun/PycharmProjects/load_profile_app/Input Load Profiles/test.xlsx'
@@ -377,38 +405,27 @@ if app_mode == 'See example':
     # process the uploaded file and turn it into a dataframe
     load_df, meta_df, excel_file, sheet_names = process_upload(example_file)
 
-    with st.expander('Click to look at the data you uploaded'):
-        st.write(load_df)
+    # run plotting function - includes interactive user input
+    fig = plot_load_profile(load_df, meta_df)
 
-    # display a radio buton for selecting y1-axis units
-    y_axis_units = st.radio('Choose units for the y-axis:', y_axis_options)
-
-    fig = plot_load_profile(load_df, meta_df, y_axis_units)
-
-    st.plotly_chart(fig, use_container_width=True)
-
-# If taking user input, process the uploaded file and display the data in table format
+# APP MODE: UPLOAD A FILE
 elif app_mode == 'Upload a file':
     # display a file_uploader widget
     uploaded_file = st.file_uploader("Choose a file")
 
     if uploaded_file is not None:
         # process the uploaded file and turn it into a dataframe
-        load_df, meta_df, excel_file, sheet_names = process_upload(example_file)
+        load_df, meta_df, excel_file, sheet_names = process_upload(uploaded_file)
 
-        with st.expander('Click to look at the data you uploaded'):
-            st.write(load_df)
+        # run plotting function - includes interactive user input
+        fig = plot_load_profile(load_df, meta_df)
 
-        # # give user the option of overwriting metadata in the app TODO: let them save it back to the excel file, fix issue with str v. float
-        # with st.expander('Click to overwrite static inputs/metadata (this will NOT change the uploaded file)'):
-        #     for i in range(len(meta_df)):
-        #         # text_field() is a streamlit specific helper function for generating dialog boxes
-        #         meta_df.iloc[i, 0] = text_field(meta_df.index[i], value = meta_df.iloc[i, 0])
 
-        # display a radio buton for selecting y1-axis units
-        y_axis_units = st.radio('Choose units for the y-axis:', y_axis_options)
+# # Example of giving user the option of overwriting metadata in the app TODO: let them save it back to the excel file, fix issue with str v. float
+# with st.expander('Click to overwrite static inputs/metadata (this will NOT change the uploaded file)'):
+#     for i in range(len(meta_df)):
+#         # text_field() is a streamlit specific helper function for generating dialog boxes
+#         meta_df.iloc[i, 0] = text_field(meta_df.index[i], value = meta_df.iloc[i, 0])
 
-        fig = plot_load_profile(load_df, meta_df, y_axis_units)
-
-        st.plotly_chart(fig, use_container_width=True)
-
+# display a radio buton for selecting y1-axis units
+# y_axis_units = st.radio('Choose units for the y-axis:', y_axis_options)
