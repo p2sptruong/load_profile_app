@@ -79,6 +79,7 @@ def process_upload(uploaded_file, data_range=data_range, meta_data_range=meta_da
 def plot_load_profile(load_df, meta_df):
     # <editor-fold desc="Process timestamps, characterize time series, calculate some variables of interest">
     # process timestamps, characterize time series, calculate some variables of interest
+    data_count = load_df.shape[0]
     start = pd.to_datetime(load_df['Timestamp'].iloc[0])
     start_plus_one = pd.to_datetime(load_df['Timestamp'].iloc[1])
     end = pd.to_datetime(load_df['Timestamp'].iloc[-1])
@@ -89,7 +90,8 @@ def plot_load_profile(load_df, meta_df):
     max_load = round(load_df['Heating Load (MBH)'].max(), 2)
     neg_loads = load_df['Heating Load (MBH)'][load_df['Heating Load (MBH)'] < 0]
     check_data = pd.DataFrame.from_dict(
-        {'Trend start': str(start),
+        {'Data count (# of rows)': str(data_count),
+         'Trend start': str(start),
          'Trend stop': str(end),
          'Timestamp interval (hrs)': str(td_in_hrs),
          'Total hours': str(total_hrs),
