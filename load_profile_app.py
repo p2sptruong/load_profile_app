@@ -100,7 +100,7 @@ def plot_load_profile(load_df, meta_df):
     mbh_design = round(meta_df.iloc[0,0],2)
     if pd.isna(mbh_design):
         slider_label = 'Missing installed capacity data. Set BTU/sf to adjust limits of graph. Default is 30 BTU/sf'
-        slider_default = 30
+        slider_default = 30.00
         mbh_flag = True
     else:
         slider_label = 'Override design BTU/sf value below. Calculated value from uploaded file is {:,} BTU/sf'.format(round(1000 * mbh_design / gsf,2))
@@ -119,7 +119,8 @@ def plot_load_profile(load_df, meta_df):
             label=slider_label,
             min_value=0.0,
             max_value=100.0,
-            value=slider_default
+            value=slider_default,
+            step = 0.01
         )
         mbh_design = round(gsf*btu_sf_override/1000,2)
 
