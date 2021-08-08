@@ -75,8 +75,7 @@ def process_upload(uploaded_file, data_range=data_range, meta_data_range=meta_da
 
     return load_df, meta_df, excel_file, sheet_names
 
-# the main event
-def plot_load_profile(load_df, meta_df):
+def data_inspector(load_df):
     # <editor-fold desc="Process timestamps, characterize time series, calculate some variables of interest">
     # process timestamps, characterize time series, calculate some variables of interest
     data_count = load_df.shape[0]
@@ -100,7 +99,51 @@ def plot_load_profile(load_df, meta_df):
         orient='index',
         columns=['Trend Data Quality Checks']
     )
+    # </editor-fold>
+
+    # <editor-fold desc="Configure data inspector">
+    # let the user look at the data in table & graph format
+    with st.expander('Click to inspect data'):
+        st.table(check_data)
+        st.write(load_df)
+        plot_time(load_df)
+    # </editor-fold>
+
+# the main event
+def plot_load_profile(load_df, meta_df):
+    # <editor-fold desc="Process timestamps, characterize time series, calculate some variables of interest">
+    # process timestamps, characterize time series, calculate some variables of interest
+    # TODO: get rid of redundancy b/w this and data_inspector()
+    data_count = load_df.shape[0]
+    start = pd.to_datetime(load_df['Timestamp'].iloc[0])
+    start_plus_one = pd.to_datetime(load_df['Timestamp'].iloc[1])
+    end = pd.to_datetime(load_df['Timestamp'].iloc[-1])
+    td_in_hrs = round((start_plus_one - start).seconds / 3600, 2)
+    total_hrs = len(load_df) * td_in_hrs
+    total_op_hrs = len(load_df['Heating Load (MBH)'][load_df['Heating Load (MBH)'] > 0]) * td_in_hrs
+    total_load = load_df['Heating Load (MBH)'].sum()
+    max_load = round(load_df['Heating Load (MBH)'].max(), 2)
+    neg_loads = load_df['Heating Load (MBH)'][load_df['Heating Load (MBH)'] < 0]
+    check_data = pd.DataFrame.from_dict(
+        {'Data count (# of rows)': str(data_count),
+         'Trend start': str(start),
+         'Trend stop': str(end),
+         'Timestamp interval (hrs)': str(td_in_hrs),
+         'Total hours': str(total_hrs),
+         'Total operating hours': str(total_op_hrs)
+         },
+        orient='index',
+        columns=['Trend Data Quality Checks']
+    )
     #</editor-fold>
+
+    # # <editor-fold desc="Configure data inspector">
+    # # let the user look at the data in table & graph format
+    # with st.expander('Click to inspect data'):
+    #     st.table(check_data)
+    #     st.write(load_df)
+    #     plot_time(load_df)
+    # # </editor-fold>
 
     # <editor-fold desc="Handle missing GSF/MBH inputs">
     # read GSF & design MBH from spreadsheet and do some stuff if it's not a real input
@@ -421,14 +464,6 @@ def plot_load_profile(load_df, meta_df):
     )
     # </editor-fold>
 
-    # <editor-fold desc="Configure data inspector">
-    # let the user look at the data in table & graph format
-    with st.expander('Click to inspect data'):
-        st.table(check_data)
-        st.write(load_df)
-        plot_time(load_df)
-    # </editor-fold>
-
     # print plot to streamlit app
     st.plotly_chart(fig, use_container_width=True)
 
@@ -475,8 +510,13 @@ if app_mode == 'See example':
     # process the uploaded file and turn it into a dataframe
     load_df, meta_df, excel_file, sheet_names = process_upload(example_file)
 
+    # show the data inspector
+    data_inspector(load_df)
+
     # run plotting function - includes interactive user input
-    fig = plot_load_profile(load_df, meta_df)
+    run_plotter = st.checkbox('Run Analysis',value=False)
+    if run_plotter:
+        fig = plot_load_profile(load_df, meta_df)
 
 # APP MODE: UPLOAD A FILE
 elif app_mode == 'Upload a file':
@@ -487,8 +527,13 @@ elif app_mode == 'Upload a file':
         # process the uploaded file and turn it into a dataframe
         load_df, meta_df, excel_file, sheet_names = process_upload(uploaded_file)
 
+        # show the data inspector
+        data_inspector(load_df)
+
         # run plotting function - includes interactive user input
-        fig = plot_load_profile(load_df, meta_df)
+        run_plotter = st.checkbox('Run Analysis', value=False)
+        if run_plotter:
+            fig = plot_load_profile(load_df, meta_df)
 
 # # Example of giving user the option of overwriting metadata in the app TODO: let them save it back to the excel file, fix issue with str v. float
 # with st.expander('Click to overwrite static inputs/metadata (this will NOT change the uploaded file)'):
