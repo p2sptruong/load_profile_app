@@ -43,13 +43,10 @@ def text_field(label, columns=None, **input_params):
     return c2.text_input("", **input_params) # Notice that you can forward text_input parameters naturally
 
 # open the file and get the sheet names
-def process_upload(uploaded_file, sheet_name=sheet_name, data_range=data_range, meta_data_range=meta_data_range):
+def process_upload(uploaded_file, data_range=data_range, meta_data_range=meta_data_range):
     excel_file = pd.ExcelFile(uploaded_file,engine='openpyxl')
     sheet_names = excel_file.sheet_names
 
-    return excel_file, sheet_names
-
-def excel_to_df(excel_file,sheet_names):
     # let the user select a sheet
     if len(sheet_names) > 1:
         sheet_name = st.selectbox('Choose a sheet:', sheet_names)
@@ -62,19 +59,19 @@ def excel_to_df(excel_file,sheet_names):
         usecols=data_range,
         engine='openpyxl'
     )
-    load_df.dropna(axis='index',how='all',inplace=True)
+    load_df.dropna(axis='index', how='all', inplace=True)
 
     # read static inputs & metadata into dataframe - hard coded
     meta_df = excel_file.parse(
         sheet_name=sheet_name,
         index_col=0,
-        header = 0,
-        nrows = meta_data_count,
+        header=0,
+        nrows=meta_data_count,
         usecols=meta_data_range,
         engine='openpyxl'
     )
-    # meta_df.dropna(axis='index',how='all',inplace=True)
-    return load_df, meta_df
+
+    return load_df, meta_df, excel_file, sheet_names
 
 # the main event
 def plot_load_profile(load_df, meta_df, y_axis_units):
@@ -374,12 +371,11 @@ app_mode = st.selectbox('Would you like to see an example, or upload a file?', [
 # If showing an example, get a random file from the example file folder and run the app
 if app_mode == 'See example':
     # example_file = example_data_path + random.choice(os.listdir(example_data_path))
-    example_file = '/Users/maxsun/PycharmProjects/load_profile_app/Input Load Profiles/SDSU Heat Load Analysis Multiple Bldgs.xlsx'
-    # example_file = '/Users/maxsun/PycharmProjects/load_profile_app/Input Load Profiles/test.xlsx'
+    # example_file = '/Users/maxsun/PycharmProjects/load_profile_app/Input Load Profiles/SDSU Heat Load Analysis Multiple Bldgs.xlsx'
+    example_file = '/Users/maxsun/PycharmProjects/load_profile_app/Input Load Profiles/test.xlsx'
 
     # process the uploaded file and turn it into a dataframe
-    excel_file, sheet_names = process_upload(example_file)
-    load_df, meta_df = excel_to_df(excel_file, sheet_names)
+    load_df, meta_df, excel_file, sheet_names = process_upload(example_file)
 
     with st.expander('Click to look at the data you uploaded'):
         st.write(load_df)
@@ -398,8 +394,7 @@ elif app_mode == 'Upload a file':
 
     if uploaded_file is not None:
         # process the uploaded file and turn it into a dataframe
-        excel_file, sheet_names = process_upload(uploaded_file)
-        load_df, meta_df = excel_to_df(excel_file, sheet_name)
+        load_df, meta_df, excel_file, sheet_names = process_upload(example_file)
 
         with st.expander('Click to look at the data you uploaded'):
             st.write(load_df)
