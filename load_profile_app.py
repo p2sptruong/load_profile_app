@@ -7,7 +7,7 @@
 # IMPORTS
 import numpy as np
 import pandas as pd
-from eatlib import * # import eatlib - the only library you'll ever need
+from eatlib import *  # import eatlib - the only library you'll ever need
 import plotly.express as px
 from plotly.subplots import make_subplots
 import openpyxl
@@ -26,6 +26,7 @@ y_axis_options = ['Operating Hours', 'Instantaneous Output']
 x_axis_options = ['MBH', 'Btu/sf']
 mbh_flag = False
 
+
 ####################################################################################################################
 # FUNCTIONS
 
@@ -41,11 +42,11 @@ def text_field(label, columns=None, **input_params):
     input_params.setdefault("key", label)
 
     # Forward text input parameters
-    return c2.text_input("", **input_params) # Notice that you can forward text_input parameters naturally
+    return c2.text_input("", **input_params)  # Notice that you can forward text_input parameters naturally
 
 # open the file and get the sheet names
 def process_upload(uploaded_file, data_range=data_range, meta_data_range=meta_data_range):
-    excel_file = pd.ExcelFile(uploaded_file,engine='openpyxl')
+    excel_file = pd.ExcelFile(uploaded_file, engine='openpyxl')
     sheet_names = excel_file.sheet_names
 
     # let the user select a sheet
@@ -76,42 +77,41 @@ def process_upload(uploaded_file, data_range=data_range, meta_data_range=meta_da
 
 # the main event
 def plot_load_profile(load_df, meta_df):
-    # <editor-fold desc="Configure data inspector">
-    # let the user look at the data in table & graph format
-    with st.expander('Click to inspect data'):
-        st.write(load_df)
-        plot_time(load_df)
-
-    # </editor-fold>
-
-    # <editor-fold desc="Process timestamps & characterize time series">
-    # process timestamps & characterize time series
+    # <editor-fold desc="Process timestamps, characterize time series, calculate some variables of interest">
+    # process timestamps, characterize time series, calculate some variables of interest
     start = pd.to_datetime(load_df['Timestamp'].iloc[0])
     start_plus_one = pd.to_datetime(load_df['Timestamp'].iloc[1])
     end = pd.to_datetime(load_df['Timestamp'].iloc[-1])
-    td_in_hrs = round((start_plus_one - start).seconds/3600,2)
-    total_hrs = len(load_df)*td_in_hrs
-    # </editor-fold>
-
-    # <editor-fold desc="Calculate some values of interest">
-    # calculate some values of interest
-    total_op_hrs = len(load_df['Heating Load (MBH)'][load_df['Heating Load (MBH)'] > 0])*td_in_hrs
+    td_in_hrs = round((start_plus_one - start).seconds / 3600, 2)
+    total_hrs = len(load_df) * td_in_hrs
+    total_op_hrs = len(load_df['Heating Load (MBH)'][load_df['Heating Load (MBH)'] > 0]) * td_in_hrs
     total_load = load_df['Heating Load (MBH)'].sum()
-    max_load = round(load_df['Heating Load (MBH)'].max(),2)
+    max_load = round(load_df['Heating Load (MBH)'].max(), 2)
     neg_loads = load_df['Heating Load (MBH)'][load_df['Heating Load (MBH)'] < 0]
-    # </editor-fold>
+    check_data = pd.DataFrame.from_dict(
+        {'Trend start': str(start),
+         'Trend stop': str(end),
+         'Timestamp interval (hrs)': str(td_in_hrs),
+         'Total hours': str(total_hrs),
+         'Total operating hours': str(total_op_hrs)
+         },
+        orient='index',
+        columns=['Trend Data Quality Checks']
+    )
+    #</editor-fold>
 
     # <editor-fold desc="Handle missing GSF/MBH inputs">
     # read GSF & design MBH from spreadsheet and do some stuff if it's not a real input
     gsf = meta_df.iloc[1, 0]
-    mbh_design = round(meta_df.iloc[0,0],2)
+    mbh_design = round(meta_df.iloc[0, 0], 2)
     if pd.isna(mbh_design):
         slider_label = 'Missing installed capacity data. Set BTU/sf to adjust limits of graph. Default is 30 BTU/sf'
         slider_default = 30.00
         mbh_flag = True
     else:
-        slider_label = 'Override design BTU/sf value below. Calculated value from uploaded file is {:,} BTU/sf'.format(round(1000 * mbh_design / gsf,2))
-        slider_default = mbh_design*1000/gsf
+        slider_label = 'Override design BTU/sf value below. Calculated value from uploaded file is {:,} BTU/sf'.format(
+            round(1000 * mbh_design / gsf, 2))
+        slider_default = mbh_design * 1000 / gsf
         mbh_flag = False
     # </editor-fold>
 
@@ -121,7 +121,7 @@ def plot_load_profile(load_df, meta_df):
         # let user choose units for x- & y- axes
         col1, col2 = st.columns(2)
         y_axis_units = col1.radio('Choose units for the y-axis:', y_axis_options)
-        x_axis_units = col2.radio('Choose units for the x-axis:', x_axis_options)
+        # x_axis_units = col2.radio('Choose units for the x-axis:', x_axis_options)
 
         # display a slider for user to adjust x-axis limit
         btu_sf_override = st.slider(
@@ -129,16 +129,16 @@ def plot_load_profile(load_df, meta_df):
             min_value=0.0,
             max_value=100.0,
             value=slider_default,
-            step = 0.01
+            step=0.01
         )
-        mbh_design = round(gsf*btu_sf_override/1000,2)
+        mbh_design = round(gsf * btu_sf_override / 1000, 2)
     # </editor-fold>
 
     # <editor-fold desc="Calculate 5% load increment & Btu/sf for design & actual">
     # calculate 5% load increment & Btu/sf for design & actual
     mbh_increment = mbh_design / 20
-    btu_sf_design = round(1000 * mbh_design / gsf,2)
-    btu_sf_actual = round(1000 * max_load / gsf,2)
+    btu_sf_design = round(1000 * mbh_design / gsf, 2)
+    btu_sf_actual = round(1000 * max_load / gsf, 2)
     # </editor-fold>
 
     # <editor-fold desc="Create bins and axes for plotting">
@@ -147,8 +147,8 @@ def plot_load_profile(load_df, meta_df):
     increment_labels = list(np.zeros(20))
     labels = list(np.zeros(20))
     for i in range(20):
-        decimal_labels[i] = str(5*(i+1)/100) + 'x'
-        increment_labels[i] = '(' + str(round(mbh_increment*i)) + '-' + str(round(mbh_increment*(i+1))) + ' MBH)'
+        decimal_labels[i] = str(5 * (i + 1) / 100) + 'x'
+        increment_labels[i] = '(' + str(round(mbh_increment * i)) + '-' + str(round(mbh_increment * (i + 1))) + ' MBH)'
         labels[i] = '<b>' + decimal_labels[i] + '</b><br>' + increment_labels[i]
     # </editor-fold>
 
@@ -168,14 +168,16 @@ def plot_load_profile(load_df, meta_df):
     # <editor-fold desc="Populate variables">
     # populate variables
     for i in range(20):
-        binned_loads[i] = load_df['Heating Load (MBH)'][(load_df['Heating Load (MBH)'] > (i * mbh_increment)) & (load_df['Heating Load (MBH)'] <= ((i + 1) * mbh_increment))].sum()
-        counts[i] = load_df['Heating Load (MBH)'][(load_df['Heating Load (MBH)'] > (i * mbh_increment)) & (load_df['Heating Load (MBH)'] <= ((i + 1) * mbh_increment))].count()
+        binned_loads[i] = load_df['Heating Load (MBH)'][(load_df['Heating Load (MBH)'] > (i * mbh_increment)) & (
+                    load_df['Heating Load (MBH)'] <= ((i + 1) * mbh_increment))].sum()
+        counts[i] = load_df['Heating Load (MBH)'][(load_df['Heating Load (MBH)'] > (i * mbh_increment)) & (
+                    load_df['Heating Load (MBH)'] <= ((i + 1) * mbh_increment))].count()
 
         c_load += binned_loads[i]
         c_hours += counts[i] * td_in_hrs
 
         cumulative_loads[i] = c_load
-        cumulative_percent[i] = 100 * cumulative_loads[i]/total_load
+        cumulative_percent[i] = 100 * cumulative_loads[i] / total_load
 
         cumulative_hours[i] = c_hours
     # </editor-fold>
@@ -192,7 +194,7 @@ def plot_load_profile(load_df, meta_df):
         hovertemplate2 = '<b>%{y:.2f}% of total operating hours</b> <extra>@ ≤%{customdata[0]} design capacity</extra>'
         color = '#3B6D89'
     elif y_axis_units == 'Instantaneous Output':
-        y1 = [round(x/total_load*100,2) for x in binned_loads]
+        y1 = [round(x / total_load * 100, 2) for x in binned_loads]
         y2 = cumulative_percent
         customdata = np.stack([decimal_labels, increment_labels]).transpose()
         y1_title_text = "<b>Instantaneous Heating Output</b>"
@@ -217,25 +219,26 @@ def plot_load_profile(load_df, meta_df):
     # <editor-fold desc="Create the figure">
     # Create a figure with a secondary y1-axis
     fig = make_subplots(
-        rows = 1,
-        cols = 1,
+        rows=1,
+        cols=1,
         vertical_spacing=0.05,
         specs=[[{"secondary_y": True}]]
     )
     # </editor-fold>
 
     # <editor-fold desc="Set figure title">
-    title = '<b>Heating Load Distribution</b> from {} to {}'.format(start.strftime('%B %-d, %Y'),end.strftime('%B %-d, %Y'))
-    for i in range(len(meta_df)-2):
-        title += '<br>' + meta_df.index[i+2] + ': ' + str(meta_df.iloc[i+2,0])
+    title = '<b>Heating Load Distribution</b> from {} to {}'.format(start.strftime('%B %-d, %Y'),
+                                                                    end.strftime('%B %-d, %Y'))
+    for i in range(len(meta_df) - 2):
+        title += '<br>' + meta_df.index[i + 2] + ': ' + str(meta_df.iloc[i + 2, 0])
     fig.update_layout(
         autosize=True,
-        title = dict(
-            text = title,
-            xanchor = 'left',
-            yanchor = 'top',
-            y = 0.95,
-            font = dict(color='black')
+        title=dict(
+            text=title,
+            xanchor='left',
+            yanchor='top',
+            y=0.95,
+            font=dict(color='black')
         )
     )
     # </editor-fold>
@@ -245,13 +248,13 @@ def plot_load_profile(load_df, meta_df):
         go.Bar(
             x=labels,
             y=y1,
-            marker=dict(color = color),
+            marker=dict(color=color),
             customdata=customdata,
             hovertemplate=hovertemplate1
         ),
         secondary_y=False,
-        row = 1,
-        col = 1
+        row=1,
+        col=1
     )
     # </editor-fold>
 
@@ -261,8 +264,8 @@ def plot_load_profile(load_df, meta_df):
             x=labels,
             y=y2,
             mode='lines+markers',
-            marker = dict(
-                color = "#FB9A2D",
+            marker=dict(
+                color="#FB9A2D",
             ),
             customdata=customdata,
             hovertemplate=hovertemplate2
@@ -278,31 +281,31 @@ def plot_load_profile(load_df, meta_df):
     # Add asterisks on "Design MBH" & "Design Btu/sf" to indicate that these are assumptions
     if mbh_flag:
         annotation_text = "<b>*Design MBH</b>: {:,}<br><b>*Design Btu/sf</b>: {:,}<br><br><b>Max. actual MBH</b>: {:,} \
-                          <br><b>Max. actual *Btu/sf</b>: {:,}<br>".format(mbh_design,btu_sf_design,max_load,
-                                                                              btu_sf_actual)
+                          <br><b>Max. actual *Btu/sf</b>: {:,}<br>".format(mbh_design, btu_sf_design, max_load,
+                                                                           btu_sf_actual)
     else:
         annotation_text = "<b>Design MBH</b>: {:,}<br><b>Design Btu/sf</b>: {:,}<br><br><b>Max. actual MBH</b>: {:,} \
                           <br><b>Max. actual Btu/sf</b>: {:,}<br>".format(mbh_design, btu_sf_design, max_load,
-                                                                              btu_sf_actual)
+                                                                          btu_sf_actual)
     # </editor-fold>
 
     # <editor-fold desc="Add annotations">
     # add annotations
     fig.add_annotation(
-        text= annotation_text,
+        text=annotation_text,
         align='left',
         showarrow=False,
         bordercolor='black',
-        borderwidth= 2,
+        borderwidth=2,
         xref='paper',
         yref='paper',
-        xanchor = 'right',
-        yanchor = 'bottom',
+        xanchor='right',
+        yanchor='bottom',
         x=0.94,
         y=1.05,
         bgcolor="white",
-        borderpad = 10,
-        font = dict(size = 14, color='black')
+        borderpad=10,
+        font=dict(size=14, color='black')
     )
     # </editor-fold>
 
@@ -311,7 +314,7 @@ def plot_load_profile(load_df, meta_df):
     if len(neg_loads) > 0:
         fig.add_annotation(
             text="<b>WARNING</b>:<br>Input file contains negative load data-<br> # of negative data points: {} of {}<br> \
-    total negative kBtus: {}".format(len(neg_loads),len(load_df),round(sum(neg_loads)*td_in_hrs,2)),
+    total negative kBtus: {}".format(len(neg_loads), len(load_df), round(sum(neg_loads) * td_in_hrs, 2)),
             align='left',
             showarrow=False,
             bordercolor='red',
@@ -332,7 +335,7 @@ def plot_load_profile(load_df, meta_df):
     # set y1-axis title
     fig.update_yaxes(
         title_text=y1_title_text,
-        color = color,
+        color=color,
         showline=True,
         linewidth=2,
         linecolor='black',
@@ -347,13 +350,13 @@ def plot_load_profile(load_df, meta_df):
     # set y2-axis title
     fig.update_yaxes(
         title_text=y2_title_text,
-        color = "#FB9A2D",
+        color="#FB9A2D",
         showline=True,
         linewidth=2,
         linecolor='black',
         secondary_y=True,
         showgrid=False,
-        range=[0,105],
+        range=[0, 105],
         nticks=2,
         ticksuffix='%',
         row=1
@@ -386,11 +389,11 @@ def plot_load_profile(load_df, meta_df):
     # <editor-fold desc="Set margins">
     # set margins
     fig.update_layout(
-        margin = dict(
-            l = 50,
-            r = 50,
-            t = 175,
-            b = 50
+        margin=dict(
+            l=50,
+            r=50,
+            t=175,
+            b=50
         )
     )
     # </editor-fold>
@@ -398,11 +401,11 @@ def plot_load_profile(load_df, meta_df):
     # <editor-fold desc="Set legend">
     # Set legend
     fig.update_layout(
-        legend = dict(
-            xanchor = 'right',
-            yanchor = 'top',
-            x = 0.9,
-            y = 0.35
+        legend=dict(
+            xanchor='right',
+            yanchor='top',
+            x=0.9,
+            y=0.35
         ),
         showlegend=False
     )
@@ -416,10 +419,19 @@ def plot_load_profile(load_df, meta_df):
     )
     # </editor-fold>
 
+    # <editor-fold desc="Configure data inspector">
+    # let the user look at the data in table & graph format
+    with st.expander('Click to inspect data'):
+        st.table(check_data)
+        st.write(load_df)
+        plot_time(load_df)
+    # </editor-fold>
+
     # print plot to streamlit app
     st.plotly_chart(fig, use_container_width=True)
 
     return fig
+
 
 ####################################################################################################################
 
@@ -453,9 +465,10 @@ app_mode = st.selectbox('Would you like to see an example, or upload a file?', [
 # APP MODE: EXAMPLE
 if app_mode == 'See example':
     # set example file here, or choose a random example file from the folder
-    example_file = example_data_path + random.choice(os.listdir(example_data_path))
+    # example_file = example_data_path + random.choice(os.listdir(example_data_path))
     # example_file = '/Users/maxsun/PycharmProjects/load_profile_app/Input Load Profiles/SDSU Heat Load Analysis Multiple Bldgs.xlsx'
-    # example_file = '/Users/maxsun/PycharmProjects/load_profile_app/Input Load Profiles/test.xlsx'
+    example_file = '/Users/maxsun/PycharmProjects/load_profile_app/Input Load Profiles/test.xlsx'
+    # example_file = '/Users/maxsun/PycharmProjects/load_profile_app/Input Load Profiles/Dining HHW Only_TEST.xlsx'
 
     # process the uploaded file and turn it into a dataframe
     load_df, meta_df, excel_file, sheet_names = process_upload(example_file)
@@ -474,7 +487,6 @@ elif app_mode == 'Upload a file':
 
         # run plotting function - includes interactive user input
         fig = plot_load_profile(load_df, meta_df)
-
 
 # # Example of giving user the option of overwriting metadata in the app TODO: let them save it back to the excel file, fix issue with str v. float
 # with st.expander('Click to overwrite static inputs/metadata (this will NOT change the uploaded file)'):
