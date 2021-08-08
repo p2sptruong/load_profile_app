@@ -55,7 +55,7 @@ from matplotlib import pyplot as plt
 #
 #   Inputs:
 #
-#   load_df - a pandas DataFrame object with timestamps in the first column & some variable of interest in the second column.
+#   load_df - a pandas DataFrame object with timestamps in the first column
 #
 #
 #   Outputs:
@@ -70,23 +70,9 @@ from matplotlib import pyplot as plt
 #
 # PLOTLY.GRAPH_OBJECTS VERSION - STABLE
 def plot_time(df):
-    # import pandas as pd
-    # import plotly.graph_objects as go
-    # import datetime
-    print('\nPLOT_TIME FUNCTION ACTIVATED') # let the user know this function has been called
-
-    # print some information about the data being plotted
-    print("\n HERE'S A PREVIEW OF THE DATA YOU'RE PLOTTING:")
-    print(df)
-    print()
-    print(df.dtypes)
-
     # convert timestamps to datetime64 objects
-    print('\nconverting timestamp data...')
     timestamps = pd.to_datetime(df.iloc[:, 0])
-    print('TIMESTAMP DATA CONVERTED FROM', type(df.iloc[0, 0]), 'TO', type(timestamps[0]))
     df.iloc[:, 0] = timestamps
-    print(df.iloc[:, 0].head())
 
     # use graph_objects to create the figure
     fig = go.Figure()
@@ -97,75 +83,44 @@ def plot_time(df):
                                  visible='legendonly',
                                  mode='lines',
                                  name=df.columns[i + 1]))
-        #TODO add label for max value
-        # fig.add_annotation(x=2, y=5,
-        #                    text="Text annotation with arrow",
-        #                    showarrow=True,
-        #                    arrowhead=1)
+    # add title and configure layout
+    fig.update_layout(
+        title=dict(
+            text='Simple Trend Data Visualization',
+            xanchor='left',
+            yanchor='top',
+            y=0.9,
+            font=dict(color='black')
+        ),
+        showlegend=True,
+        legend_title_text='Points:',
+        autosize=True,
+        hovermode='x'
+    )
 
-    fig.update_layout(showlegend=True)    # force the legend for single-trace plots
-    fig.update_layout(legend_title_text='Points:')
-    fig.update_layout(hovermode='x')
+    # add annotations
+    fig.add_annotation(
+        text= 'Click on points<br>in the legend<br>to toggle visibility',
+        align='left',
+        showarrow=False,
+        bordercolor='black',
+        borderwidth= 1,
+        xref='paper',
+        yref='paper',
+        xanchor = 'left',
+        yanchor = 'bottom',
+        x=1.02,
+        y=1.05,
+        bgcolor="white",
+        borderpad = 10,
+        font = dict(size = 14, color='black')
+    )
+
+    # Print or show the figure, suppress lines as required
+    st.plotly_chart(fig, use_container_width=True) # print to streamlit
     # fig.show()    # changed this to return a fig instead of plotting. can change back if we want.
-    return fig
-#
-# # PLOTLY.EXPRESS VERSION - STABLE
-# def plot_time(load_df):
-#     # import pandas as pd
-#     # import plotly.express as px
-#     # import datetime
-#     print('\nPLOT_TIME FUNCTION ACTIVATED') # let the user know this function has been called
-#
-#     pd.options.plotting.backend = "plotly"  # activate Plotly backend
-#     print('plotly backend activated...')
-#
-#     print("\n HERE'S A PREVIEW OF THE DATA YOU'RE PLOTTING:")
-#     print(load_df)   # print some information about the data being plotted
-#     print()
-#     print(load_df.dtypes)
-#
-#     print('\nconverting timestamp data...')  # convert timestamps to datetime64 objects
-#     timestamp = pd.to_datetime(load_df.iloc[:, 0])
-#     print('TIMESTAMP DATA CONVERTED FROM', type(load_df.iloc[0, 0]), 'TO', type(timestamp[0]))
-#     load_df.iloc[:, 0] = timestamp
-#     print(load_df.iloc[:, 0].head())
-#
-#     y_values = load_df.iloc[:,1] # values in the 2nd column will be plotted on the y-axis
-#     x_values = load_df.iloc[:,0] # timestamps on the x-axis
-#
-#     y_label = load_df.columns[1] # name of 2nd column is y-axis label
-#     x_label = load_df.columns[0] # name of 1st column is x-axis label
-#     xy_labels = {'x': x_label, 'y': y_label}    # create a dictionary of the labels to pass to px.line
-#
-#     fig = px.line(x=x_values, y=y_values, labels=xy_labels, title=y_label + ' vs. ' + x_label)  # plot using plotly
-#     fig.show()
-#     return
-#
-# MATPLOTLIB VERSION - STABLE
-# def plot_time(load_df):
-#     # import pandas as pd
-#     # from matplotlib import pyplot as plt
-#
-#     y_values = load_df.iloc[:,1]  # Values in the 2nd column will be plotted on the y-axis
-#     x_values = range(len(y_values))  # x-axis is just a range of the same length as y_values
-#
-#     x_ticks = [x*796.364 for x in range(12)]    # create x ticks corresponding to months
-#     months = ['J','F','M','A','M','J','J','A','S','O','N','D']  # list of months
-#
-#     y_label = load_df.columns[1]  # Name of 2nd column is y-axis label
-#     x_label = load_df.columns[0]  # Name of 1st column is x-axis label
-#
-#     fig, ax = plt.subplots()  # Create a figure containing a single axes.
-#     ax.set_title(y_label + ' vs. ' + x_label)  # set the title
-#     ax.set_xlabel(x_label)  # label the x-axis
-#     ax.set_ylabel(y_label)  # label the y-axis
-#     ax.set_xticks(x_ticks)  # set and label x-ticks
-#     ax.set_xticklabels(months)
-#     ax.plot(x_values, y_values, lw=0.1)  # plot using matplotlib
-#     plt.show()  # show the plot
-#     return
-#####################################################
 
+    return fig
 
 #####################################################
 # plot_x(load_df) - variable vs. variable plotting function
@@ -207,35 +162,8 @@ def plot_x(df):
         return
 
     fig = px.scatter(x=x_values, y=y_values, labels=xy_labels, title=y_label + ' vs. ' + x_label, trendline="ols")  # plot using plotly
-    fig.show()
+    fig.sow()
     return
-#
-# MATPLOTLIB VERSION - STABLE
-# def plot_x(load_df):
-#     # import pandas as pd
-#     # from matplotlib import pyplot as plt
-#
-#     print("\n HERE'S A PREVIEW OF THE DATA YOU'RE PLOTTING:")  # show a preview of the data passed to the function
-#     print(load_df)   # print some information about the data being plotted
-#     print()
-#     print(load_df.dtypes)
-#
-#     x_values = load_df.iloc[:, 0]  # Values in the 1st column will be plotted on the x-axis
-#     y_values = load_df.iloc[:, 1]  # Values in the 2nd column will be plotted on the y-axis
-#
-#     x_label = load_df.columns[0]  # Name of 1st column is x-axis label
-#     y_label = load_df.columns[1]  # Name of 2nd column is y-axis labelxy_labels = {'x': x_label, 'y': y_label}    # create a dictionary of the labels to pass to px.line
-#
-#     # make the plot
-#     fig, ax = plt.subplots()  # Create a figure containing a single axes.
-#     ax.set_title(str(y_label) + ' vs. ' + str(x_label))  # set the title
-#     ax.set_xlabel(x_label)  # label the x-axis
-#     ax.set_ylabel(y_label)  # label the y-axis
-#     ax.plot(x_values, y_values, lw=0.1)  # Plot the data
-#     plt.show()  # show the plot
-#     return
-##############################################################################
-
 
 
 ####################################################################################################################

@@ -76,9 +76,13 @@ def process_upload(uploaded_file, data_range=data_range, meta_data_range=meta_da
 
 # the main event
 def plot_load_profile(load_df, meta_df):
-    # let the user look at the data in table format
-    with st.expander('Click to look at the data you uploaded'):
+    # <editor-fold desc="Configure data inspector">
+    # let the user look at the data in table & graph format
+    with st.expander('Click to inspect data'):
         st.write(load_df)
+        plot_time(load_df)
+
+    # </editor-fold>
 
     # <editor-fold desc="Process timestamps & characterize time series">
     # process timestamps & characterize time series
