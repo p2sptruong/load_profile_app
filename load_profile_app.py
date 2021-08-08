@@ -23,6 +23,7 @@ data_range = 'A:I'
 meta_data_range = 'K:L'
 meta_data_count = 8
 y_axis_options = ['Operating Hours', 'Instantaneous Output']
+x_axis_options = ['MBH', 'Btu/sf']
 mbh_flag = False
 
 ####################################################################################################################
@@ -97,31 +98,30 @@ def plot_load_profile(load_df, meta_df):
 
     # read design MBH from spreadsheet and do some stuff if it's not a real input
     mbh_design = round(meta_df.iloc[0,0],2)
+    if pd.isna(mbh_design):
+        slider_label = 'Missing installed capacity data. Set BTU/sf to adjust limits of graph. Default is 30 BTU/sf'
+        slider_default = 30
+        mbh_flag = True
+    else:
+        slider_label = 'Override design BTU/sf value below. Calculated value from uploaded file is {:,} BTU/sf'.format(round(1000 * mbh_design / gsf,2))
+        slider_default = mbh_design*1000/gsf
+        mbh_flag = False
 
     # Let user change graph settings
     with st.expander('Click to change graph settings'):
         # let user choose units for x- & y- axes
         col1, col2 = st.columns(2)
-        col1.header('Choose units for the y-axis:')
-        col2.header('Choose units for the x-axis:')
         y_axis_units = col1.radio('Choose units for the y-axis:', y_axis_options)
-        col2.radio('Choose units for the x-axis:', y_axis_options)
-        # y_axis_units = st.radio('Choose units for the y-axis:', y_axis_options)
+        x_axis_units = col2.radio('Choose units for the x-axis:', x_axis_options)
 
-        # if the uploaded file is missing MBH data, let the user choose a value for BTU/sf
-        if pd.isna(mbh_design):
-            # display a slider for user to adjust x-axis limit
-            btu_sf_override = st.slider(
-                label='Missing installed capacity data. Set BTU/sf to adjust limits of graph. Default is 30 BTU/sf',
-                min_value=5,
-                max_value=100,
-                value=30,
-                step=5
-            )
-            mbh_design = gsf*btu_sf_override/1000
-            mbh_flag = True
-        else:
-            mbh_flag = False
+        # display a slider for user to adjust x-axis limit
+        btu_sf_override = st.slider(
+            label=slider_label,
+            min_value=0.0,
+            max_value=100.0,
+            value=slider_default
+        )
+        mbh_design = round(gsf*btu_sf_override/1000,2)
 
     # calculate 5% load increment
     mbh_increment = mbh_design/20
@@ -183,7 +183,17 @@ def plot_load_profile(load_df, meta_df):
         hovertemplate1 = '<b>%{y:,}% of total heating output</b> <extra>@ %{customdata[0]} design capacity</extra>'
         hovertemplate2 = '<b>%{y:.2f}% of total heating output</b> <extra>@ ≤%{customdata[0]} design capacity</extra>'
         color = '#00C496'
-    #TODO: add y-axis option for Btu/sf
+
+    # if x_axis_units == 'MBH':
+    #     y1 = [x / sum(counts) * 100 for x in counts]
+    #     y2 = [x / total_op_hrs * 100 for x in cumulative_hours]
+    #     customdata = np.stack([decimal_labels, increment_labels]).transpose()
+    #     y1_title_text = "<b>Operating hours</b>"
+    #     y2_title_text = "<b>Cumulative</b><br>(100% = {:,}".format(int(sum(counts) * td_in_hrs)) + " hours)"
+    #     hovertemplate1 = '<b>%{y:.2f}% of total operating hours</b> <extra>@ %{customdata[0]} design capacity</extra>'
+    #     hovertemplate2 = '<b>%{y:.2f}% of total operating hours</b> <extra>@ ≤%{customdata[0]} design capacity</extra>'
+    #     color = '#3B6D89'
+    #TODO: add x-axis option for Btu/sf
 
     # create a figure with a secondary y1-axis
     fig = make_subplots(
