@@ -72,7 +72,7 @@ def process_upload(uploaded_file, data_range=data_range, meta_data_range=meta_da
         usecols=meta_data_range,
         engine='openpyxl'
     )
-    meta_df.drop(index='P2S Project No')
+    meta_df.drop(index='P2S Project No',inplace=True)
 
     return load_df, meta_df, excel_file, sheet_names
 
