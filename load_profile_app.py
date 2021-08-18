@@ -72,6 +72,7 @@ def process_upload(uploaded_file, data_range=data_range, meta_data_range=meta_da
         usecols=meta_data_range,
         engine='openpyxl'
     )
+    meta_df.drop(index='P2S Project No')
 
     return load_df, meta_df, excel_file, sheet_names
 
@@ -502,8 +503,8 @@ app_mode = st.selectbox('Would you like to see an example, or upload a file?', [
 # APP MODE: EXAMPLE
 if app_mode == 'See example':
     # set example file here, or choose a random example file from the folder
-    example_file = example_data_path + random.choice(os.listdir(example_data_path))
-    # example_file = '/Users/maxsun/PycharmProjects/load_profile_app/Input Load Profiles/SDSU Heat Load Analysis Multiple Bldgs.xlsx'
+    # example_file = example_data_path + random.choice(os.listdir(example_data_path))
+    example_file = './Input Load Profiles/SDSU Heat Load Analysis Multiple Bldgs.xlsx'
     # example_file = '/Users/maxsun/PycharmProjects/load_profile_app/Input Load Profiles/test.xlsx'
     # example_file = '/Users/maxsun/PycharmProjects/load_profile_app/Input Load Profiles/Dining HHW Only_TEST.xlsx'
 
