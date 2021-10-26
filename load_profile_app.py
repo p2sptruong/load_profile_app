@@ -150,7 +150,6 @@ def plot_load_profile(load_df, meta_df):
     # read GSF & design MBH from spreadsheet and do some stuff if it's not a real input
     gsf = meta_df.iloc[1, 0]
     mbh_design = round(meta_df.iloc[0, 0],0)
-    mbh_design = int( mbh_design)
     if pd.isna(mbh_design):
         slider_label = 'Missing installed capacity data. Set BTUH/sf to adjust limits of graph. Default is 30 BTUH/sf'
         slider_default = 10.00
@@ -179,7 +178,6 @@ def plot_load_profile(load_df, meta_df):
             step=0.01
         )
         mbh_design = round(gsf * btu_sf_override / 1000, 0)
-        mbh_design = int( mbh_design)
     # </editor-fold>
 
     # <editor-fold desc="Calculate 5% load increment & Btu/sf for design & actual">
@@ -329,7 +327,7 @@ def plot_load_profile(load_df, meta_df):
     # Add asterisks on "Design MBH" & "Design Btu/sf" to indicate that these are assumptions
     if mbh_flag:
         annotation_text = "<b>*Design MBH</b>: {:,}<br><b>*Design Btuh/sf</b>: {:,}<br><br><b>Max. actual MBH</b>: {:,} \
-                          <br><b>Max. actual *Btuh/sf</b>: {:,}<br>".format(mbh_design, btu_sf_design, max_load,
+                          <br><b>Max. actual *Btuh/sf</b>: {:,}<br>".format(int(mbh_design), btu_sf_design, max_load,
                                                                            btu_sf_actual)
     else:
         annotation_text = "<b>Design MBH</b>: {:,}<br><b>Design Btuh/sf</b>: {:,}<br><br><b>Max. actual MBH</b>: {:,} \
