@@ -74,7 +74,6 @@ def process_upload(uploaded_file, data_range=data_range, meta_data_range=meta_da
     )
     meta_df.drop(index='P2S Project No',inplace=True)
     
-    st.write(meta_df)
 
     return load_df, meta_df, excel_file, sheet_names
 
@@ -277,8 +276,8 @@ def plot_load_profile(load_df, meta_df):
     # <editor-fold desc="Set figure title">
     title = '<b>Heating Load Distribution</b> from {} to {}'.format(start.strftime('%B %-d, %Y'),
                                                                     end.strftime('%B %-d, %Y'))
-    for i in range(len(meta_df) - 2):
-        title += '<br>' + meta_df.index[i + 2] + ': ' + str(meta_df.iloc[i + 2, 0])
+    for i in range(len(meta_df) - 1):
+        title += '<br>' + meta_df.index[i + 1] + ': ' + str(meta_df.iloc[i + 1, 0])
     fig.update_layout(
         autosize=True,
         title=dict(
