@@ -279,9 +279,8 @@ def plot_load_profile(load_df, meta_df):
                                                                     end.strftime('%B %-d, %Y'))
    
     
-    title += '<br>' + meta_df.index[ 1] + ': ' + int(meta_df.iloc[1, 0])
-    for i in range(len(meta_df) - 2):
-        title += '<br>' + meta_df.index[i + 2] + ': ' + str(meta_df.iloc[i + 2, 0])
+    for i in range(len(meta_df) - 1):
+        title += '<br>' + meta_df.index[i + 1] + ': ' + str(meta_df.iloc[i + 1, 0])
     fig.update_layout(
         autosize=True,
         title=dict(
