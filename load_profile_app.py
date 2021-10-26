@@ -152,7 +152,7 @@ def plot_load_profile(load_df, meta_df):
     mbh_design = round(meta_df.iloc[0, 0],0)
     if pd.isna(mbh_design):
         slider_label = 'Missing installed capacity data. Set BTUH/sf to adjust limits of graph. Default is 30 BTUH/sf'
-        slider_default = 10.00
+        slider_default = 30.00
         mbh_flag = True
     else:
         slider_label = 'Override design BTUH/sf value below. Calculated value from uploaded file is {:,} BTUH/sf'.format(
@@ -327,7 +327,7 @@ def plot_load_profile(load_df, meta_df):
     # Add asterisks on "Design MBH" & "Design Btu/sf" to indicate that these are assumptions
     if mbh_flag:
         annotation_text = "<b>*Design MBH</b>: {:,}<br><b>*Design Btuh/sf</b>: {:,}<br><br><b>Max. actual MBH</b>: {:,} \
-                          <br><b>Max. actual *Btuh/sf</b>: {:,}<br>".format(int(mbh_design), btu_sf_design, max_load,
+                          <br><b>Max. actual *Btuh/sf</b>: {:,}<br>".format(mbh_design, btu_sf_design, max_load,
                                                                            btu_sf_actual)
     else:
         annotation_text = "<b>Design MBH</b>: {:,}<br><b>Design Btuh/sf</b>: {:,}<br><br><b>Max. actual MBH</b>: {:,} \
