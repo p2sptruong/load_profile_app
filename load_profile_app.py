@@ -149,10 +149,11 @@ def plot_load_profile(load_df, meta_df):
     # <editor-fold desc="Handle missing GSF/MBH inputs">
     # read GSF & design MBH from spreadsheet and do some stuff if it's not a real input
     gsf = meta_df.iloc[1, 0]
-    mbh_design = round(meta_df.iloc[0, 0])
+    mbh_design = round(meta_df.iloc[0, 0],0)
+    mbh_design = int( mbh_design)
     if pd.isna(mbh_design):
         slider_label = 'Missing installed capacity data. Set BTUH/sf to adjust limits of graph. Default is 30 BTUH/sf'
-        slider_default = 30.00
+        slider_default = 10.00
         mbh_flag = True
     else:
         slider_label = 'Override design BTUH/sf value below. Calculated value from uploaded file is {:,} BTUH/sf'.format(
@@ -177,7 +178,8 @@ def plot_load_profile(load_df, meta_df):
             value=slider_default,
             step=0.01
         )
-        mbh_design = round(gsf * btu_sf_override / 1000)
+        mbh_design = round(gsf * btu_sf_override / 1000, 0)
+        mbh_design = int( mbh_design)
     # </editor-fold>
 
     # <editor-fold desc="Calculate 5% load increment & Btu/sf for design & actual">
