@@ -87,7 +87,7 @@ def data_inspector(load_df):
     total_hrs = len(load_df) * td_in_hrs
     total_op_hrs = len(load_df['Heating Load (MBH)'][load_df['Heating Load (MBH)'] > 0]) * td_in_hrs
     total_load = load_df['Heating Load (MBH)'].sum()
-    max_load = round(load_df['Heating Load (MBH)'].max(), 2)
+    max_load = round(load_df['Heating Load (MBH)'].max(), 0)
     neg_loads = load_df['Heating Load (MBH)'][load_df['Heating Load (MBH)'] < 0]
     check_data = pd.DataFrame.from_dict(
         {'Data count (# of rows)': str(data_count),
@@ -184,7 +184,7 @@ def plot_load_profile(load_df, meta_df):
     # calculate 5% load increment & Btu/sf for design & actual
     mbh_increment = mbh_design / 20
     btu_sf_design = round(1000 * mbh_design / gsf, 0)
-    btu_sf_actual = round(1000 * max_load / gsf, 0)
+    btu_sf_actual = round( 1000 * max_load / gsf, 0)
     # </editor-fold>
 
     # <editor-fold desc="Create bins and axes for plotting">
@@ -275,7 +275,7 @@ def plot_load_profile(load_df, meta_df):
     # <editor-fold desc="Set figure title">
     title = '<b>Heating Load Distribution</b> from {} to {}'.format(start.strftime('%B %-d, %Y'),
                                                                     end.strftime('%B %-d, %Y'))
-    for i in range(len(meta_df) - 2):
+    for i in range(len(meta_df) - 1):
         title += '<br>' + meta_df.index[i + 2] + ': ' + str(meta_df.iloc[i + 2, 0])
     fig.update_layout(
         autosize=True,
@@ -327,11 +327,11 @@ def plot_load_profile(load_df, meta_df):
     # Add asterisks on "Design MBH" & "Design Btu/sf" to indicate that these are assumptions
     if mbh_flag:
         annotation_text = "<b>*Design MBH</b>: {:,}<br><b>*Design Btuh/sf</b>: {:,}<br><br><b>Max. actual MBH</b>: {:,} \
-                          <br><b>Max. actual *Btuh/sf</b>: {:,}<br>".format(mbh_design, btu_sf_design, max_load,
+                          <br><b>Max. actual *Btuh/sf</b>: {:,}<br>".format(int(mbh_design), btu_sf_design, int(max_load),
                                                                            btu_sf_actual)
     else:
         annotation_text = "<b>Design MBH</b>: {:,}<br><b>Design Btuh/sf</b>: {:,}<br><br><b>Max. actual MBH</b>: {:,} \
-                          <br><b>Max. actual Btuh/sf</b>: {:,}<br>".format(mbh_design, btu_sf_design, max_load,
+                          <br><b>Max. actual Btuh/sf</b>: {:,}<br>".format(int(mbh_design), btu_sf_design, int(max_load),
                                                                           btu_sf_actual)
     # </editor-fold>
 
