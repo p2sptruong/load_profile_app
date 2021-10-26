@@ -22,8 +22,8 @@ sheet_name = 'Data'
 data_range = 'A:I'
 meta_data_range = 'K:L'
 meta_data_count = 8
-y_axis_options = ['Operating Hours', 'Instantaneous Output']
-x_axis_options = ['MBH', 'Btu/sf']
+y_axis_options = ['Annual Operating Hours', 'Instantaneous Output']
+x_axis_options = ['MBH', 'Btuh/sf']
 mbh_flag = False
 
 
@@ -123,7 +123,7 @@ def plot_load_profile(load_df, meta_df):
     total_hrs = len(load_df) * td_in_hrs
     total_op_hrs = len(load_df['Heating Load (MBH)'][load_df['Heating Load (MBH)'] > 0]) * td_in_hrs
     total_load = load_df['Heating Load (MBH)'].sum()
-    max_load = round(load_df['Heating Load (MBH)'].max(), 2)
+    max_load = round(load_df['Heating Load (MBH)'].max(), 0)
     neg_loads = load_df['Heating Load (MBH)'][load_df['Heating Load (MBH)'] < 0]
     check_data = pd.DataFrame.from_dict(
         {'Data count (# of rows)': str(data_count),
@@ -149,14 +149,14 @@ def plot_load_profile(load_df, meta_df):
     # <editor-fold desc="Handle missing GSF/MBH inputs">
     # read GSF & design MBH from spreadsheet and do some stuff if it's not a real input
     gsf = meta_df.iloc[1, 0]
-    mbh_design = round(meta_df.iloc[0, 0], 2)
+    mbh_design = round(meta_df.iloc[0, 0], 0)
     if pd.isna(mbh_design):
-        slider_label = 'Missing installed capacity data. Set BTU/sf to adjust limits of graph. Default is 30 BTU/sf'
+        slider_label = 'Missing installed capacity data. Set BTUH/sf to adjust limits of graph. Default is 30 BTUH/sf'
         slider_default = 30.00
         mbh_flag = True
     else:
-        slider_label = 'Override design BTU/sf value below. Calculated value from uploaded file is {:,} BTU/sf'.format(
-            round(1000 * mbh_design / gsf, 2))
+        slider_label = 'Override design BTUH/sf value below. Calculated value from uploaded file is {:,} BTUH/sf'.format(
+            round(1000 * mbh_design / gsf, 0))
         slider_default = mbh_design * 1000 / gsf
         mbh_flag = False
     # </editor-fold>
@@ -177,14 +177,14 @@ def plot_load_profile(load_df, meta_df):
             value=slider_default,
             step=0.01
         )
-        mbh_design = round(gsf * btu_sf_override / 1000, 2)
+        mbh_design = round(gsf * btu_sf_override / 1000, 0)
     # </editor-fold>
 
     # <editor-fold desc="Calculate 5% load increment & Btu/sf for design & actual">
     # calculate 5% load increment & Btu/sf for design & actual
     mbh_increment = mbh_design / 20
-    btu_sf_design = round(1000 * mbh_design / gsf, 2)
-    btu_sf_actual = round(1000 * max_load / gsf, 2)
+    btu_sf_design = round(1000 * mbh_design / gsf, 0)
+    btu_sf_actual = round(1000 * max_load / gsf, 0)
     # </editor-fold>
 
     # <editor-fold desc="Create bins and axes for plotting">
@@ -230,11 +230,11 @@ def plot_load_profile(load_df, meta_df):
 
     # <editor-fold desc="Set y-axis variables based on y-axis units">
     # Set y-axis variables based on y-axis units
-    if y_axis_units == 'Operating Hours':
+    if y_axis_units == 'Annual Operating Hours':
         y1 = [x / sum(counts) * 100 for x in counts]
         y2 = [x / total_op_hrs * 100 for x in cumulative_hours]
         customdata = np.stack([decimal_labels, increment_labels]).transpose()
-        y1_title_text = "<b>Operating hours</b>"
+        y1_title_text = "<b>Annual Operating hours</b>"
         y2_title_text = "<b>Cumulative</b><br>(100% = {:,}".format(int(sum(counts) * td_in_hrs)) + " hours)"
         hovertemplate1 = '<b>%{y:.2f}% of total operating hours</b> <extra>@ %{customdata[0]} design capacity</extra>'
         hovertemplate2 = '<b>%{y:.2f}% of total operating hours</b> <extra>@ ≤%{customdata[0]} design capacity</extra>'
@@ -326,12 +326,12 @@ def plot_load_profile(load_df, meta_df):
     # TODO: Clean this up
     # Add asterisks on "Design MBH" & "Design Btu/sf" to indicate that these are assumptions
     if mbh_flag:
-        annotation_text = "<b>*Design MBH</b>: {:,}<br><b>*Design Btu/sf</b>: {:,}<br><br><b>Max. actual MBH</b>: {:,} \
-                          <br><b>Max. actual *Btu/sf</b>: {:,}<br>".format(mbh_design, btu_sf_design, max_load,
+        annotation_text = "<b>*Design MBH</b>: {:,}<br><b>*Design Btuh/sf</b>: {:,}<br><br><b>Max. actual MBH</b>: {:,} \
+                          <br><b>Max. actual *Btuh/sf</b>: {:,}<br>".format(mbh_design, btu_sf_design, max_load,
                                                                            btu_sf_actual)
     else:
-        annotation_text = "<b>Design MBH</b>: {:,}<br><b>Design Btu/sf</b>: {:,}<br><br><b>Max. actual MBH</b>: {:,} \
-                          <br><b>Max. actual Btu/sf</b>: {:,}<br>".format(mbh_design, btu_sf_design, max_load,
+        annotation_text = "<b>Design MBH</b>: {:,}<br><b>Design Btuh/sf</b>: {:,}<br><br><b>Max. actual MBH</b>: {:,} \
+                          <br><b>Max. actual Btuh/sf</b>: {:,}<br>".format(mbh_design, btu_sf_design, max_load,
                                                                           btu_sf_actual)
     # </editor-fold>
 
@@ -412,7 +412,7 @@ def plot_load_profile(load_df, meta_df):
     # <editor-fold desc="Configure x-axis">
     # Set x-axis title
     fig.update_xaxes(
-        title_text='<b>Part load operating point</b><br>(1.0x = design capacity, ' + str(mbh_design) + ' MBH)',
+        title_text='<b>Part load operating point</b><br>(% design capacity, ' + str(mbh_design) + ' MBH)',
         showline=True,
         linewidth=2,
         linecolor='black',
