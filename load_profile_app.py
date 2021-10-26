@@ -73,6 +73,8 @@ def process_upload(uploaded_file, data_range=data_range, meta_data_range=meta_da
         engine='openpyxl'
     )
     meta_df.drop(index='P2S Project No',inplace=True)
+    
+    st.write(meta_df)
 
     return load_df, meta_df, excel_file, sheet_names
 
@@ -327,12 +329,12 @@ def plot_load_profile(load_df, meta_df):
     # Add asterisks on "Design MBH" & "Design Btu/sf" to indicate that these are assumptions
     if mbh_flag:
         annotation_text = "<b>*Design MBH</b>: {:,}<br><b>*Design Btuh/sf</b>: {:,}<br><br><b>Max. actual MBH</b>: {:,} \
-                          <br><b>Max. actual *Btuh/sf</b>: {:,}<br>".format(int(mbh_design), btu_sf_design, int(max_load),
-                                                                           btu_sf_actual)
+                          <br><b>Max. actual *Btuh/sf</b>: {:,}<br>".format(int(mbh_design), int(btu_sf_design), int(max_load),
+                                                                           int(btu_sf_actual))
     else:
         annotation_text = "<b>Design MBH</b>: {:,}<br><b>Design Btuh/sf</b>: {:,}<br><br><b>Max. actual MBH</b>: {:,} \
-                          <br><b>Max. actual Btuh/sf</b>: {:,}<br>".format(int(mbh_design), btu_sf_design, int(max_load),
-                                                                          btu_sf_actual)
+                          <br><b>Max. actual Btuh/sf</b>: {:,}<br>".format(int(mbh_design), int(btu_sf_design), int(max_load),
+                                                                          int(btu_sf_actual))
     # </editor-fold>
 
     # <editor-fold desc="Add annotations">
