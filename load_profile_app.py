@@ -22,7 +22,7 @@ sheet_name = 'Data'
 data_range = 'A:I'
 meta_data_range = 'K:L'
 meta_data_count = 8
-y_axis_options = ['Annual Operating Hours', 'Instantaneous Output']
+y_axis_options = ['Annual Operating Hours', 'Annual Heating Consumption']
 x_axis_options = ['MBH', 'Btuh/sf']
 mbh_flag = False
 
@@ -236,16 +236,16 @@ def plot_load_profile(load_df, meta_df):
         y1 = [x / sum(counts) * 100 for x in counts]
         y2 = [x / total_op_hrs * 100 for x in cumulative_hours]
         customdata = np.stack([decimal_labels, increment_labels]).transpose()
-        y1_title_text = "<b>Annual Operating hours</b>"
+        y1_title_text = "<b>Annual Operating Hours</b>"
         y2_title_text = "<b>Cumulative</b><br>(100% = {:,}".format(int(sum(counts) * td_in_hrs)) + " hours)"
         hovertemplate1 = '<b>%{y:.2f}% of total operating hours</b> <extra>@ %{customdata[0]} design capacity</extra>'
         hovertemplate2 = '<b>%{y:.2f}% of total operating hours</b> <extra>@ ≤%{customdata[0]} design capacity</extra>'
         color = '#3B6D89'
-    elif y_axis_units == 'Instantaneous Output':
+    elif y_axis_units == 'Annual Heating Consumption':
         y1 = [round(x / total_load * 100, 2) for x in binned_loads]
         y2 = cumulative_percent
         customdata = np.stack([decimal_labels, increment_labels]).transpose()
-        y1_title_text = "<b>Instantaneous Heating Output</b>"
+        y1_title_text = "<b>Annual Heating Consumption</b>"
         y2_title_text = "<b>Cumulative</b><br>(100% = {:,}".format(round(total_load)) + " kBtus)"
         hovertemplate1 = '<b>%{y:,}% of total heating output</b> <extra>@ %{customdata[0]} design capacity</extra>'
         hovertemplate2 = '<b>%{y:.2f}% of total heating output</b> <extra>@ ≤%{customdata[0]} design capacity</extra>'
