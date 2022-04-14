@@ -416,7 +416,7 @@ def plot_load_profile(load_df, meta_df):
     # <editor-fold desc="Configure x-axis">
     # Set x-axis title
     fig.update_xaxes(
-        title_text='<b>Part load operating point</b><br>(% design capacity, ' + str(mbh_design) + ' MBH)',
+        title_text='<b>Percent of Design Load</b><br>(Design capacity, ' + str(mbh_design) + ' MBH)',
         showline=True,
         linewidth=2,
         linecolor='black',
