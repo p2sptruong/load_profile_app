@@ -22,7 +22,7 @@ sheet_name = 'Data'
 data_range = 'A:I'
 meta_data_range = 'K:L'
 meta_data_count = 8
-y_axis_options = ['Annual Operating Hours', 'Annual Heating Consumption']
+y_axis_options = ['Annual Operating Hours', 'Annual Load within Percent Load Bin']
 x_axis_options = ['MBH', 'Btuh/sf']
 mbh_flag = False
 
@@ -241,11 +241,11 @@ def plot_load_profile(load_df, meta_df):
         hovertemplate1 = '<b>%{y:.2f}% of total operating hours</b> <extra>@ %{customdata[0]} design capacity</extra>'
         hovertemplate2 = '<b>%{y:.2f}% of total operating hours</b> <extra>@ ≤%{customdata[0]} design capacity</extra>'
         color = '#3B6D89'
-    elif y_axis_units == 'Annual Heating Consumption':
+    elif y_axis_units == 'Annual Load within Percent Load Bin':
         y1 = [round(x / total_load * 100, 2) for x in binned_loads]
         y2 = cumulative_percent
         customdata = np.stack([decimal_labels, increment_labels]).transpose()
-        y1_title_text = "<b>Annual Heating Consumption</b>"
+        y1_title_text = "<b>Annual Load within Percent Load Bin</b>"
         y2_title_text = "<b>Cumulative</b><br>(100% = {:,}".format(round(total_load)) + " kBtus)"
         hovertemplate1 = '<b>%{y:,}% of total heating output</b> <extra>@ %{customdata[0]} design capacity</extra>'
         hovertemplate2 = '<b>%{y:.2f}% of total heating output</b> <extra>@ ≤%{customdata[0]} design capacity</extra>'
@@ -416,7 +416,7 @@ def plot_load_profile(load_df, meta_df):
     # <editor-fold desc="Configure x-axis">
     # Set x-axis title
     fig.update_xaxes(
-        title_text='<b>Part load operating point</b><br>(% design capacity, ' + str(mbh_design) + ' MBH)',
+        title_text='<b>Percent of Design Load</b><br>(Design Capacity, ' + str(mbh_design) + ' MBH)',
         showline=True,
         linewidth=2,
         linecolor='black',
